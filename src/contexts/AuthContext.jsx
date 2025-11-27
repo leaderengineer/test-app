@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Foydalanuvchi ro'yxatdan o'tkazish
+  // Foydalanuvchini ro'yxatdan o'tkazish
   const signup = async (email, password, userData) => {
     try {
       const result = await createUserWithEmailAndPassword(
@@ -34,9 +34,18 @@ export const AuthProvider = ({ children }) => {
         password
       );
 
-      // Foydalanuvchi profilini yangilash
+      // Username ni avtomatik generatsiya qilish (Auth komponentidan faqat ism/familiya keladi)
+      const firstName = userData.firstName || "";
+      const lastName = userData.lastName || "";
+      const fallbackUsername = email.split("@")[0];
+      const username =
+        userData.username ||
+        `${firstName} ${lastName}`.trim() ||
+        fallbackUsername;
+
+      // Firebase Auth profilini yangilash
       await updateProfile(result.user, {
-        displayName: userData.username,
+        displayName: username,
       });
 
       // Admin huquqini tekshirish
@@ -46,10 +55,10 @@ export const AuthProvider = ({ children }) => {
       await setDoc(doc(db, "users", result.user.uid), {
         uid: result.user.uid,
         email: result.user.email,
-        username: userData.username,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        age: userData.age,
+        username,
+        firstName,
+        lastName,
+        age: userData.age ?? null,
         createdAt: new Date().toISOString(),
         isAdmin: isAdminUser, // Avtomatik admin huquqi
       });
